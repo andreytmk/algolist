@@ -12,6 +12,8 @@ project ("algolist")
 
 # Add source to this project's executable.
 add_executable (hungarian "hungarian.cpp")
+add_executable (suffix_array "suffix_array.cpp")
 
 enable_testing()
 add_test(TestHungarian hungarian)
+add_test(TestSuffixArray suffix_array)
