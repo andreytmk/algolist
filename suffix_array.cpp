@@ -81,6 +81,33 @@ private:
 };
 // Copy end
 
+// Copy begin
+vector<int> KasaiLcp(const string& s, const vector<int>& a) {
+    const int N = s.size();
+    vector<int> aInv(N);
+    for (int i = 0; i < N; ++i) {
+        aInv[a[i]] = i;
+    }
+
+    vector<int> lcp(N);
+    int currentLcp = 0;
+    for (int i = 0; i < N; ++i) {
+        int x = aInv[i];
+        if (x == N - 1) {
+            lcp[x] = -1;
+            continue;
+        }
+        int aNext = a[x + 1];
+        while (max(i + currentLcp, aNext + currentLcp) < N && s[i + currentLcp] == s[aNext + currentLcp]) {
+            ++currentLcp;
+        }
+        lcp[x] = currentLcp;
+        currentLcp = max(0, currentLcp - 1);
+    }
+    return lcp;
+}
+// Copy end
+
 const int TEST_COUNT = 1000;
 
 bool useExample() {
@@ -186,6 +213,68 @@ bool test() {
     return success;
 }
 
+vector<int> lcpNaive(const string& s, const vector<int>& a) {
+    const int N = s.size();
+    vector<int> aInv(N);
+    for (int i = 0; i < N; ++i) {
+        aInv[a[i]] = i;
+    }
+
+    vector<int> lcp(N);
+    for (int i = 0; i + 1 < N; ++i) {
+        int currentLcp = 0;
+        while (max(a[i] + currentLcp, a[i + 1] + currentLcp) < N &&
+            s[a[i] + currentLcp] == s[a[i + 1] + currentLcp]) {
+            ++currentLcp;
+        }
+        lcp[i] = currentLcp;
+    }
+    lcp[N - 1] = -1;
+
+    return lcp;
+}
+
+bool lcpSmoke() {
+    SuffixArray sfx;
+    string s = "a";
+    sfx.Build(s);
+    vector<int> lcp1 = KasaiLcp(s, sfx.a);
+
+    bool ok = true;
+    ok &= (lcp1[0] == -1);
+
+    s = "abeabcbd";
+    sfx.Build(s);
+    vector<int> lcp2 = KasaiLcp(s, sfx.a);
+    vector<int> lcp2Expected = { 2, 0, 1, 1, 0, 0, 0, -1 };
+    vector<int> lcp2Naive = lcpNaive(s, sfx.a);
+    ok &= std::equal(lcp2.begin(), lcp2.end(), lcp2Expected.begin());
+    ok &= std::equal(lcp2.begin(), lcp2.end(), lcp2Naive.begin());
+
+    return ok;
+}
+
+bool testLCP() {
+    bool success = true;
+    SuffixArray sfx;
+    for (int t = 0; t < TEST_COUNT && success; ++t) {
+        string s;
+        generateRndString(s);
+        s = s + "$";
+        sfx.Build(s);
+
+        vector<int> actual = KasaiLcp(s, sfx.a);
+        vector<int> expected = lcpNaive(s, sfx.a);
+
+        success &= std::equal(actual.begin(), actual.end(), expected.begin());
+        if (!success) {
+            std::cout << "Failed test:" << std::endl;
+            std::cout << s << std::endl;
+        }
+    }
+    return success;
+}
+
 bool processTest(const std::string& testName, std::function<bool()> testFun) {
     bool testRes = testFun();
     if (testRes) {
@@ -201,6 +290,8 @@ int main() {
     bool ok = true;
     ok &= processTest("useExample", useExample);
     ok &= processTest("test", test);
+    ok &= processTest("lcpSmoke", lcpSmoke);
+    ok &= processTest("testLCP", testLCP);
     if (ok) {
         return 0;
     }
