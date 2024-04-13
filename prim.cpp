@@ -2,6 +2,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <set>
 #include <vector>
 
 using namespace std;
@@ -9,7 +10,7 @@ using namespace std;
 const int INF = 1.0e9;
 
 // Copy begin
-int primMinTreeWeight(const vector<vector<int>>& g) {
+int primMinTreeWeightNaive(const vector<vector<int>>& g) {
     const int N = g.size();
     vector<bool> used(N, false);
     used[0] = true;
@@ -34,6 +35,52 @@ int primMinTreeWeight(const vector<vector<int>>& g) {
             used[minA] = true;
             used[minB] = true;
         }
+    }
+    return minTreeWeight;
+}
+// Copy end
+
+// Copy begin
+struct PrimEdge {
+    int b;
+    int weight;
+
+    bool operator< (const PrimEdge& q) const {
+        return weight < q.weight;
+    }
+};
+
+int primMinTreeWeightEffective(const vector<vector<int>>& g) {
+    const int N = g.size();
+    vector<bool> used(N, false);
+    used[0] = true;
+    multiset<PrimEdge> q;
+    for (int x = 0; x < N; ++x) {
+        if (g[0][x] < INF && !used[x]) {
+            PrimEdge e;
+            e.b = x;
+            e.weight = g[0][x];
+            q.insert(e);
+        }
+    }
+
+    int minTreeWeight = 0;
+    while (!q.empty()) {
+        multiset<PrimEdge>::iterator iter = q.begin();
+        PrimEdge e(*iter);
+        if (!used[e.b]) {
+            used[e.b] = true;
+            minTreeWeight += e.weight;
+            for (int x = 0; x < N; ++x) {
+                if (g[e.b][x] < INF && !used[x]) {
+                    PrimEdge pe;
+                    pe.b = x;
+                    pe.weight = g[e.b][x];
+                    q.insert(pe);
+                }
+            }
+        }
+        q.erase(iter);
     }
     return minTreeWeight;
 }
@@ -101,7 +148,7 @@ void generateTestGraph(int N, vector<vector<int>>& g, int& minTreeWeight) {
 bool trivialTest() {
     const int N = 1;
     vector<vector<int>> g(N, vector<int>(N, 0));
-    int weight = primMinTreeWeight(g);
+    int weight = primMinTreeWeightNaive(g);
     return weight == 0;
 }
 
@@ -133,7 +180,14 @@ bool stressTest() {
         vector<vector<int>> g;
         int expectedWeight;
         generateTestGraph(N, g, expectedWeight);
-        int actualWeight = primMinTreeWeight(g);
+        int actualWeight = primMinTreeWeightNaive(g);
+        ok &= expectedWeight == actualWeight;
+        if (!ok) {
+            cout << "actualWeight=" << actualWeight;
+            traceGraph(g, expectedWeight);
+        }
+
+        actualWeight = primMinTreeWeightEffective(g);
         ok &= expectedWeight == actualWeight;
         if (!ok) {
             cout << "actualWeight=" << actualWeight;
