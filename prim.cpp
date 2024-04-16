@@ -41,46 +41,36 @@ int primMinTreeWeightNaive(const vector<vector<int>>& g) {
 // Copy end
 
 // Copy begin
-struct PrimEdge {
-    int b;
-    int weight;
-
-    bool operator< (const PrimEdge& q) const {
-        return weight < q.weight;
-    }
-};
-
 int primMinTreeWeightEffective(const vector<vector<int>>& g) {
     const int N = g.size();
     vector<bool> used(N, false);
-    used[0] = true;
-    multiset<PrimEdge> q;
-    for (int x = 0; x < N; ++x) {
-        if (g[0][x] < INF && !used[x]) {
-            PrimEdge e;
-            e.b = x;
-            e.weight = g[0][x];
-            q.insert(e);
-        }
-    }
-
+    vector<int> w(N, INF);
+    vector<int> p(N, INF);
     int minTreeWeight = 0;
-    while (!q.empty()) {
-        multiset<PrimEdge>::iterator iter = q.begin();
-        PrimEdge e(*iter);
-        if (!used[e.b]) {
-            used[e.b] = true;
-            minTreeWeight += e.weight;
-            for (int x = 0; x < N; ++x) {
-                if (g[e.b][x] < INF && !used[x]) {
-                    PrimEdge pe;
-                    pe.b = x;
-                    pe.weight = g[e.b][x];
-                    q.insert(pe);
-                }
+    int current = 0;
+    while (current >= 0) {
+        used[current] = true;
+        for (int i = 0; i < N; ++i) {
+            if (used[i]) {
+                continue;
+            }
+            if (g[current][i] < w[i]) {
+                w[i] = g[current][i];
+                p[i] = current;
             }
         }
-        q.erase(iter);
+
+        current = -1;
+        int minEdge = INF;
+        for (int i = 0; i < N; ++i) {
+            if (!used[i] && w[i] < minEdge) {
+                minEdge = w[i];
+                current = i;
+            }
+        }
+        if (current >= 0) {
+            minTreeWeight += minEdge;
+        }
     }
     return minTreeWeight;
 }
@@ -183,14 +173,14 @@ bool stressTest() {
         int actualWeight = primMinTreeWeightNaive(g);
         ok &= expectedWeight == actualWeight;
         if (!ok) {
-            cout << "actualWeight=" << actualWeight;
+            cout << "actualWeight=" << actualWeight << endl;
             traceGraph(g, expectedWeight);
         }
 
         actualWeight = primMinTreeWeightEffective(g);
         ok &= expectedWeight == actualWeight;
         if (!ok) {
-            cout << "actualWeight=" << actualWeight;
+            cout << "actualWeight=" << actualWeight << endl;
             traceGraph(g, expectedWeight);
         }
     }
