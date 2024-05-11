@@ -25,6 +25,7 @@ int fastPower(int base, int power) {
 // Copy begin
 vector<int> fact;
 vector<int> factInv;
+vector<int64_t> comb;
 
 void buildFact(const int N) {
     fact.resize(N + 1);
@@ -38,6 +39,15 @@ void buildFactInv(const int N) {
     factInv.resize(N + 1);
     for (int i = 0; i <= N; ++i) {
         factInv[i] = fastPower(fact[i], MOD - 2);
+    }
+}
+
+void buildComb(const int N) {
+    comb.resize(N + 1);
+    comb[0] = 1;
+    for (int64_t i = 1; i <= N; ++i) {
+        comb[i] = (comb[i - 1] * (N - i + 1)) % MOD;
+        comb[i] = (comb[i] * fastPower(i, MOD - 2)) % MOD;
     }
 }
 
@@ -104,13 +114,24 @@ bool calcC_Test() {
     buildFactInv(MAXN);
     for (int t = 0; t < TEST_COUNT && success; ++t) {
         int n = random(1, MAXN);
+        buildComb(n);
         int k = random(1, n);
         int actual = calcC(k, n);
+
         int expected = cNaive(k, n) % MOD;
         if (actual != expected) {
             std::cout
                 << "Wrong Answer. k=" << k << " n=" << n
                 << " Expected: " << expected << " Actual: " << actual
+                << std::endl;
+            success = false;
+        }
+
+        int prebuild = comb[k];
+        if (expected != prebuild) {
+            std::cout
+                << "Wrong Answer. k=" << k << " n=" << n
+                << " Expected: " << expected << " Prebuild: " << prebuild
                 << std::endl;
             success = false;
         }
